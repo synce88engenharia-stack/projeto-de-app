@@ -1,0 +1,91 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client"
+  output   = "../app/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model Obra {
+  id           String   @id @default(cuid())
+  nome         String
+  endereco     String?
+  descricao    String?
+  ativa        Boolean  @default(true)
+  criadaEm     DateTime @default(now())
+  atualizadaEm DateTime @updatedAt
+
+  funcionarios Funcionario[]
+  registros    RegistroDiario[]
+}
+
+enum StatusFuncionario {
+  ATIVO
+  DESLIGADO
+}
+
+model Funcionario {
+  id               String            @id @default(cuid())
+  obraId           String
+  obra             Obra              @relation(fields: [obraId], references: [id], onDelete: Restrict)
+
+  nome             String
+  funcao           String
+  dataAdmissao     DateTime
+  status           StatusFuncionario @default(ATIVO)
+  dataDesligamento DateTime?
+
+  criadoEm         DateTime          @default(now())
+  atualizadoEm     DateTime          @updatedAt
+
+  registros        RegistroDiario[]
+
+  @@index([obraId])
+  @@index([status])
+}
+
+enum TipoRefeicao {
+  EM_ESPECIE
+  DINHEIRO
+}
+
+model RegistroDiario {
+  id            String   @id @default(cuid())
+  data          DateTime
+
+  funcionarioId String
+  funcionario   Funcionario @relation(fields: [funcionarioId], references: [id], onDelete: Restrict)
+
+  obraId        String
+  obra          Obra        @relation(fields: [obraId], references: [id], onDelete: Restrict)
+
+  presenca      Boolean
+
+  tipoRefeicao  TipoRefeicao?
+  custoRefeicao Float        @default(0)
+
+  merendaRecebida Boolean    @default(false)
+  custoMerenda    Float      @default(0)
+
+  valorDeslocamento Float    @default(0)
+
+  observacao    String?
+
+  criadoEm      DateTime @default(now())
+  atualizadoEm  DateTime @updatedAt
+
+  @@unique([funcionarioId, data])
+  @@index([obraId, data])
+  @@index([data])
+}
+
+model Configuracao {
+  id            Int      @id @default(1)
+  valorRefeicao Float    @default(14.0)
+  valorMerenda  Float    @default(6.0)
+  atualizadoEm  DateTime @updatedAt
+}
