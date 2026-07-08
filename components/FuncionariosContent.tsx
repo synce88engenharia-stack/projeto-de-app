@@ -4,6 +4,8 @@ import Link from "next/link";
 import { useSearchParams, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { formatDateBR } from "@/lib/date";
+import { STATUS_FUNCIONARIO, STATUS_FUNCIONARIO_LABEL, type StatusFuncionario } from "@/lib/funcionario";
+import { StatusFuncionarioPill } from "@/components/StatusFuncionarioPill";
 
 type Obra = { id: string; nome: string };
 
@@ -11,7 +13,7 @@ type Funcionario = {
   id: string;
   nome: string;
   funcao: string;
-  status: "ATIVO" | "DESLIGADO";
+  status: StatusFuncionario;
   dataAdmissao: string;
   dataDesligamento: string | null;
   obra: { id: string; nome: string };
@@ -92,8 +94,11 @@ export function FuncionariosContent() {
           className="border border-line rounded-md px-2.5 py-1.5 text-sm bg-panel"
         >
           <option value="">Todos os status</option>
-          <option value="ATIVO">Ativos</option>
-          <option value="DESLIGADO">Desligados</option>
+          {STATUS_FUNCIONARIO.map((s) => (
+            <option key={s} value={s}>
+              {STATUS_FUNCIONARIO_LABEL[s]}
+            </option>
+          ))}
         </select>
       </div>
 
@@ -136,15 +141,7 @@ export function FuncionariosContent() {
                     {formatDateBR(new Date(f.dataAdmissao))}
                   </td>
                   <td className="px-3.5 py-2.5 border-b border-[#e6edf5]">
-                    {f.status === "ATIVO" ? (
-                      <span className="text-[11px] font-bold px-2.5 py-0.5 rounded-full bg-success-bg text-success">
-                        Ativo
-                      </span>
-                    ) : (
-                      <span className="text-[11px] font-bold px-2.5 py-0.5 rounded-full bg-danger-bg text-danger">
-                        Desligado{f.dataDesligamento ? ` — ${formatDateBR(new Date(f.dataDesligamento))}` : ""}
-                      </span>
-                    )}
+                    <StatusFuncionarioPill status={f.status} dataDesligamento={f.dataDesligamento} />
                   </td>
                   <td className="px-3.5 py-2.5 border-b border-[#e6edf5]">
                     <Link

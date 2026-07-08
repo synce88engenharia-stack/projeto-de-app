@@ -55,7 +55,8 @@ export async function POST(request: NextRequest) {
     registros.map((r) => {
       const presenca = r.presenca;
       const tipoRefeicao = presenca ? r.tipoRefeicao ?? null : null;
-      const custoRefeicao = tipoRefeicao === "DINHEIRO" ? valorRefeicao : 0;
+      // Custo de R$14 é o mesmo para a empresa em ambos os casos (almoço ou vale).
+      const custoRefeicao = tipoRefeicao ? valorRefeicao : 0;
       const valorDeslocamento = presenca ? r.valorDeslocamento ?? 0 : 0;
       // Quem recebe deslocamento já tem a merenda incluída.
       const merendaRecebida = presenca ? !!r.merendaRecebida || valorDeslocamento > 0 : false;

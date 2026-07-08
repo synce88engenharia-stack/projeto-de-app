@@ -26,6 +26,9 @@ model Obra {
 
 enum StatusFuncionario {
   ATIVO
+  AFASTADO
+  FERIAS
+  ATESTADO
   DESLIGADO
 }
 

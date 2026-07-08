@@ -10,8 +10,10 @@ type FuncionarioReport = {
   funcao: string;
   diasPresentes: number;
   diasFalta: number;
-  diasRefeicaoDinheiro: number;
-  valorRefeicaoTotal: number;
+  diasAlmoco: number;
+  valorAlmocoTotal: number;
+  diasVale: number;
+  valorValeTotal: number;
   valorMerendaTotal: number;
   valorDeslocamentoTotal: number;
   totalGeral: number;
@@ -21,6 +23,19 @@ type ReportResponse = {
   funcionarios: FuncionarioReport[];
   totais: Omit<FuncionarioReport, "funcionarioId" | "nome" | "funcao">;
 };
+
+const COLUNAS = [
+  "Funcionário",
+  "Presenças",
+  "Faltas",
+  "Dias almoço",
+  "Almoço",
+  "Dias vale",
+  "Vale",
+  "Merenda",
+  "Deslocamento",
+  "Total geral",
+];
 
 function formatCurrency(value: number) {
   return value.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
@@ -79,8 +94,10 @@ export default function RelatorioQuinzenalPage() {
       "Função",
       "Presenças",
       "Faltas",
+      "Dias almoço",
+      "Almoço",
       "Dias vale",
-      "Vale a pagar",
+      "Vale",
       "Merenda",
       "Deslocamento",
       "Total geral",
@@ -90,8 +107,10 @@ export default function RelatorioQuinzenalPage() {
       f.funcao,
       f.diasPresentes,
       f.diasFalta,
-      f.diasRefeicaoDinheiro,
-      f.valorRefeicaoTotal.toFixed(2),
+      f.diasAlmoco,
+      f.valorAlmocoTotal.toFixed(2),
+      f.diasVale,
+      f.valorValeTotal.toFixed(2),
       f.valorMerendaTotal.toFixed(2),
       f.valorDeslocamentoTotal.toFixed(2),
       f.totalGeral.toFixed(2),
@@ -111,7 +130,9 @@ export default function RelatorioQuinzenalPage() {
       <div className="flex items-baseline justify-between flex-wrap gap-3 mb-6">
         <div>
           <h1 className="text-xl font-extrabold text-ink">Relatório quinzenal</h1>
-          <p className="text-sm text-muted mt-1">Fechamento de pagamento por funcionário — escolha o período</p>
+          <p className="text-sm text-muted mt-1">
+            Custo por funcionário — escolha o período. Almoço e vale custam R$14 igualmente para a empresa.
+          </p>
         </div>
         <button
           onClick={exportCsv}
@@ -151,34 +172,32 @@ export default function RelatorioQuinzenalPage() {
 
       <div className="bg-panel border border-line rounded-lg overflow-hidden">
         <div className="overflow-x-auto">
-          <table className="w-full text-sm border-collapse min-w-[860px]">
+          <table className="w-full text-sm border-collapse min-w-[980px]">
             <thead>
               <tr>
-                {["Funcionário", "Presenças", "Faltas", "Dias vale", "Vale a pagar", "Merenda", "Deslocamento", "Total geral"].map(
-                  (h, i) => (
-                    <th
-                      key={h}
-                      className={`text-[11px] uppercase tracking-wide text-muted font-bold px-3.5 py-2.5 border-b border-line whitespace-nowrap ${
-                        i === 0 ? "text-left" : "text-right"
-                      }`}
-                    >
-                      {h}
-                    </th>
-                  )
-                )}
+                {COLUNAS.map((h, i) => (
+                  <th
+                    key={h}
+                    className={`text-[11px] uppercase tracking-wide text-muted font-bold px-3.5 py-2.5 border-b border-line whitespace-nowrap ${
+                      i === 0 ? "text-left" : "text-right"
+                    }`}
+                  >
+                    {h}
+                  </th>
+                ))}
               </tr>
             </thead>
             <tbody>
               {loading && (
                 <tr>
-                  <td colSpan={8} className="px-3.5 py-6 text-center text-muted text-sm">
+                  <td colSpan={COLUNAS.length} className="px-3.5 py-6 text-center text-muted text-sm">
                     Carregando…
                   </td>
                 </tr>
               )}
               {!loading && report && report.funcionarios.length === 0 && (
                 <tr>
-                  <td colSpan={8} className="px-3.5 py-6 text-center text-muted text-sm">
+                  <td colSpan={COLUNAS.length} className="px-3.5 py-6 text-center text-muted text-sm">
                     Nenhum lançamento neste período para esta obra.
                   </td>
                 </tr>
@@ -195,10 +214,16 @@ export default function RelatorioQuinzenalPage() {
                       {f.diasFalta}
                     </td>
                     <td className="px-3.5 py-2.5 border-b border-[#e6edf5] text-right font-mono tabular-nums">
-                      {f.diasRefeicaoDinheiro}
+                      {f.diasAlmoco}
                     </td>
                     <td className="px-3.5 py-2.5 border-b border-[#e6edf5] text-right font-mono tabular-nums">
-                      {formatCurrency(f.valorRefeicaoTotal)}
+                      {formatCurrency(f.valorAlmocoTotal)}
+                    </td>
+                    <td className="px-3.5 py-2.5 border-b border-[#e6edf5] text-right font-mono tabular-nums">
+                      {f.diasVale}
+                    </td>
+                    <td className="px-3.5 py-2.5 border-b border-[#e6edf5] text-right font-mono tabular-nums">
+                      {formatCurrency(f.valorValeTotal)}
                     </td>
                     <td className="px-3.5 py-2.5 border-b border-[#e6edf5] text-right font-mono tabular-nums">
                       {formatCurrency(f.valorMerendaTotal)}
@@ -216,9 +241,13 @@ export default function RelatorioQuinzenalPage() {
                   <td className="px-3.5 py-2.5">Total — {report.funcionarios.length} funcionário(s)</td>
                   <td className="px-3.5 py-2.5 text-right font-mono tabular-nums">{report.totais.diasPresentes}</td>
                   <td className="px-3.5 py-2.5 text-right font-mono tabular-nums">{report.totais.diasFalta}</td>
-                  <td className="px-3.5 py-2.5 text-right font-mono tabular-nums">{report.totais.diasRefeicaoDinheiro}</td>
+                  <td className="px-3.5 py-2.5 text-right font-mono tabular-nums">{report.totais.diasAlmoco}</td>
                   <td className="px-3.5 py-2.5 text-right font-mono tabular-nums">
-                    {formatCurrency(report.totais.valorRefeicaoTotal)}
+                    {formatCurrency(report.totais.valorAlmocoTotal)}
+                  </td>
+                  <td className="px-3.5 py-2.5 text-right font-mono tabular-nums">{report.totais.diasVale}</td>
+                  <td className="px-3.5 py-2.5 text-right font-mono tabular-nums">
+                    {formatCurrency(report.totais.valorValeTotal)}
                   </td>
                   <td className="px-3.5 py-2.5 text-right font-mono tabular-nums">
                     {formatCurrency(report.totais.valorMerendaTotal)}

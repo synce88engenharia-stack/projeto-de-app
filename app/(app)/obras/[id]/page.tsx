@@ -3,12 +3,14 @@
 import { useEffect, useState, use as usePromise } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import type { StatusFuncionario } from "@/lib/funcionario";
+import { StatusFuncionarioPill } from "@/components/StatusFuncionarioPill";
 
 type Funcionario = {
   id: string;
   nome: string;
   funcao: string;
-  status: "ATIVO" | "DESLIGADO";
+  status: StatusFuncionario;
 };
 
 type ObraDetail = {
@@ -163,11 +165,7 @@ export default function EditarObraPage({ params }: { params: Promise<{ id: strin
                 <span>
                   {f.nome} <span className="text-muted">— {f.funcao}</span>
                 </span>
-                {f.status === "ATIVO" ? (
-                  <span className="text-[11px] font-bold px-2 py-0.5 rounded-full bg-success-bg text-success">Ativo</span>
-                ) : (
-                  <span className="text-[11px] font-bold px-2 py-0.5 rounded-full bg-danger-bg text-danger">Desligado</span>
-                )}
+                <StatusFuncionarioPill status={f.status} />
               </li>
             ))}
           </ul>

@@ -2,7 +2,12 @@ import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { parseDayKey } from "@/lib/date";
-import type { Prisma } from "@/app/generated/prisma/client";
+import { STATUS_FUNCIONARIO } from "@/lib/funcionario";
+import type { Prisma, StatusFuncionario } from "@/app/generated/prisma/client";
+
+function isStatusFuncionario(value: string): value is StatusFuncionario {
+  return (STATUS_FUNCIONARIO as readonly string[]).includes(value);
+}
 
 export async function GET(request: NextRequest) {
   const obraId = request.nextUrl.searchParams.get("obraId");
@@ -10,7 +15,7 @@ export async function GET(request: NextRequest) {
 
   const where: Prisma.FuncionarioWhereInput = {
     ...(obraId ? { obraId } : {}),
-    ...(status === "ATIVO" || status === "DESLIGADO" ? { status } : {}),
+    ...(status && isStatusFuncionario(status) ? { status } : {}),
   };
 
   const funcionarios = await prisma.funcionario.findMany({

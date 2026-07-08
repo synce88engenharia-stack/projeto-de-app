@@ -19,8 +19,10 @@ export type FuncionarioQuinzenaReport = {
   funcao: string;
   diasPresentes: number;
   diasFalta: number;
-  diasRefeicaoDinheiro: number;
-  valorRefeicaoTotal: number;
+  diasAlmoco: number;
+  valorAlmocoTotal: number;
+  diasVale: number;
+  valorValeTotal: number;
   valorMerendaTotal: number;
   valorDeslocamentoTotal: number;
   totalGeral: number;
@@ -28,15 +30,7 @@ export type FuncionarioQuinzenaReport = {
 
 export type QuinzenaReport = {
   funcionarios: FuncionarioQuinzenaReport[];
-  totais: {
-    diasPresentes: number;
-    diasFalta: number;
-    diasRefeicaoDinheiro: number;
-    valorRefeicaoTotal: number;
-    valorMerendaTotal: number;
-    valorDeslocamentoTotal: number;
-    totalGeral: number;
-  };
+  totais: Omit<FuncionarioQuinzenaReport, "funcionarioId" | "nome" | "funcao">;
 };
 
 export function computeQuinzenaReport(
@@ -59,8 +53,10 @@ export function computeQuinzenaReport(
         funcao: funcionario.funcao,
         diasPresentes: 0,
         diasFalta: 0,
-        diasRefeicaoDinheiro: 0,
-        valorRefeicaoTotal: 0,
+        diasAlmoco: 0,
+        valorAlmocoTotal: 0,
+        diasVale: 0,
+        valorValeTotal: 0,
         valorMerendaTotal: 0,
         valorDeslocamentoTotal: 0,
         totalGeral: 0,
@@ -74,11 +70,14 @@ export function computeQuinzenaReport(
       linha.diasFalta += 1;
     }
 
-    if (registro.tipoRefeicao === "DINHEIRO") {
-      linha.diasRefeicaoDinheiro += 1;
+    if (registro.tipoRefeicao === "EM_ESPECIE") {
+      linha.diasAlmoco += 1;
+      linha.valorAlmocoTotal += registro.custoRefeicao;
+    } else if (registro.tipoRefeicao === "DINHEIRO") {
+      linha.diasVale += 1;
+      linha.valorValeTotal += registro.custoRefeicao;
     }
 
-    linha.valorRefeicaoTotal += registro.custoRefeicao;
     linha.valorMerendaTotal += registro.custoMerenda;
     linha.valorDeslocamentoTotal += registro.valorDeslocamento;
   }
@@ -86,30 +85,28 @@ export function computeQuinzenaReport(
   const funcionariosReport = Array.from(acumuladoPorFuncionario.values())
     .map((linha) => ({
       ...linha,
-      totalGeral: linha.valorRefeicaoTotal + linha.valorMerendaTotal + linha.valorDeslocamentoTotal,
+      totalGeral: linha.valorAlmocoTotal + linha.valorValeTotal + linha.valorMerendaTotal + linha.valorDeslocamentoTotal,
     }))
     .sort((a, b) => a.nome.localeCompare(b.nome));
 
-  const totais = funcionariosReport.reduce(
-    (acc, linha) => ({
-      diasPresentes: acc.diasPresentes + linha.diasPresentes,
-      diasFalta: acc.diasFalta + linha.diasFalta,
-      diasRefeicaoDinheiro: acc.diasRefeicaoDinheiro + linha.diasRefeicaoDinheiro,
-      valorRefeicaoTotal: acc.valorRefeicaoTotal + linha.valorRefeicaoTotal,
-      valorMerendaTotal: acc.valorMerendaTotal + linha.valorMerendaTotal,
-      valorDeslocamentoTotal: acc.valorDeslocamentoTotal + linha.valorDeslocamentoTotal,
-      totalGeral: acc.totalGeral + linha.totalGeral,
-    }),
-    {
-      diasPresentes: 0,
-      diasFalta: 0,
-      diasRefeicaoDinheiro: 0,
-      valorRefeicaoTotal: 0,
-      valorMerendaTotal: 0,
-      valorDeslocamentoTotal: 0,
-      totalGeral: 0,
+  const totaisIniciais = {
+    diasPresentes: 0,
+    diasFalta: 0,
+    diasAlmoco: 0,
+    valorAlmocoTotal: 0,
+    diasVale: 0,
+    valorValeTotal: 0,
+    valorMerendaTotal: 0,
+    valorDeslocamentoTotal: 0,
+    totalGeral: 0,
+  };
+
+  const totais = funcionariosReport.reduce((acc, linha) => {
+    for (const key of Object.keys(totaisIniciais) as (keyof typeof totaisIniciais)[]) {
+      acc[key] += linha[key];
     }
-  );
+    return acc;
+  }, { ...totaisIniciais });
 
   return { funcionarios: funcionariosReport, totais };
 }

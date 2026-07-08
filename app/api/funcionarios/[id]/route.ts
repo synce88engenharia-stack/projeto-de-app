@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { parseDayKey } from "@/lib/date";
+import { STATUS_FUNCIONARIO } from "@/lib/funcionario";
 
 type RouteContext = { params: Promise<{ id: string }> };
 
@@ -22,7 +23,7 @@ const UpdateFuncionarioSchema = z
     nome: z.string().trim().min(1).optional(),
     funcao: z.string().trim().min(1).optional(),
     obraId: z.string().min(1).optional(),
-    status: z.enum(["ATIVO", "DESLIGADO"]).optional(),
+    status: z.enum(STATUS_FUNCIONARIO).optional(),
     dataDesligamento: z.string().nullable().optional(),
   })
   .refine((data) => data.status !== "DESLIGADO" || !!data.dataDesligamento, {
