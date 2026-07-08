@@ -21,6 +21,7 @@ model Obra {
 
   funcionarios Funcionario[]
   registros    RegistroDiario[]
+  rdos         Rdo[]
 }
 
 enum StatusFuncionario {
@@ -88,4 +89,20 @@ model Configuracao {
   valorRefeicao Float    @default(14.0)
   valorMerenda  Float    @default(6.0)
   atualizadoEm  DateTime @updatedAt
+}
+
+model Rdo {
+  id           String   @id @default(cuid())
+  data         DateTime
+
+  obraId       String
+  obra         Obra     @relation(fields: [obraId], references: [id], onDelete: Restrict)
+
+  atividades   String
+
+  criadoEm     DateTime @default(now())
+  atualizadoEm DateTime @updatedAt
+
+  @@unique([obraId, data])
+  @@index([obraId, data])
 }

@@ -9,6 +9,8 @@ const NAV_ITEMS = [
   { href: "/funcionarios", label: "Funcionários", icon: "☰" },
   { href: "/lancamento", label: "Lançamento diário", icon: "✓" },
   { href: "/relatorios/quinzenal", label: "Relatório quinzenal", icon: "Σ" },
+  { href: "/rdo", label: "RDO", icon: "▤" },
+  { href: "/rdo/relatorio", label: "Relatório de RDO", icon: "▦" },
   { href: "/configuracoes", label: "Configurações", icon: "⚙" },
 ];
 
@@ -33,21 +35,27 @@ export function NavRail({ adminUsername }: { adminUsername: string }) {
       </div>
 
       <div className="flex flex-col gap-0.5">
-        {NAV_ITEMS.map((item) => {
-          const active = item.href === "/" ? pathname === "/" : pathname.startsWith(item.href);
-          return (
-            <Link
-              key={item.href}
-              href={item.href}
-              className={`flex items-center gap-2.5 px-2.5 py-2 rounded-md text-[13px] font-semibold ${
-                active ? "bg-accent text-white" : "text-[#b6c8de] hover:bg-rail-hover hover:text-white"
-              }`}
-            >
-              <span className="w-4 text-center font-mono text-xs opacity-90">{item.icon}</span>
-              <span>{item.label}</span>
-            </Link>
-          );
-        })}
+        {(() => {
+          const activeHref = NAV_ITEMS.filter((item) =>
+            item.href === "/" ? pathname === "/" : pathname.startsWith(item.href)
+          ).sort((a, b) => b.href.length - a.href.length)[0]?.href;
+
+          return NAV_ITEMS.map((item) => {
+            const active = item.href === activeHref;
+            return (
+              <Link
+                key={item.href}
+                href={item.href}
+                className={`flex items-center gap-2.5 px-2.5 py-2 rounded-md text-[13px] font-semibold ${
+                  active ? "bg-accent text-white" : "text-[#b6c8de] hover:bg-rail-hover hover:text-white"
+                }`}
+              >
+                <span className="w-4 text-center font-mono text-xs opacity-90">{item.icon}</span>
+                <span>{item.label}</span>
+              </Link>
+            );
+          });
+        })()}
       </div>
 
       <div className="mt-auto border-t border-[#1d3f68] pt-3 text-xs text-[#8ca6c7]">
