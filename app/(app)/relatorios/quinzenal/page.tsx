@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 
 type Obra = { id: string; nome: string };
 
@@ -22,39 +22,26 @@ type ReportResponse = {
   totais: Omit<FuncionarioReport, "funcionarioId" | "nome" | "funcao">;
 };
 
-const MESES = [
-  "Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho",
-  "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro",
-];
-
-function buildQuinzenaOptions() {
-  const options: { id: string; label: string }[] = [];
-  const now = new Date();
-  let year = now.getFullYear();
-  let month = now.getMonth() + 1; // 1-12
-
-  for (let i = 0; i < 8; i++) {
-    const mm = String(month).padStart(2, "0");
-    options.push({ id: `${year}-${mm}-Q2`, label: `16–fim de ${MESES[month - 1]} ${year}` });
-    options.push({ id: `${year}-${mm}-Q1`, label: `1–15 de ${MESES[month - 1]} ${year}` });
-    month -= 1;
-    if (month === 0) {
-      month = 12;
-      year -= 1;
-    }
-  }
-  return options;
-}
-
 function formatCurrency(value: number) {
   return value.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 }
 
+function defaultRange() {
+  const today = new Date();
+  const day = today.getDate();
+  const year = today.getFullYear();
+  const month = today.getMonth();
+  const start = day <= 15 ? 1 : 16;
+  const end = day <= 15 ? 15 : new Date(year, month + 1, 0).getDate();
+  const pad = (n: number) => String(n).padStart(2, "0");
+  const iso = (y: number, m: number, d: number) => `${y}-${pad(m + 1)}-${pad(d)}`;
+  return { from: iso(year, month, start), to: iso(year, month, end) };
+}
+
 export default function RelatorioQuinzenalPage() {
-  const quinzenaOptions = useMemo(() => buildQuinzenaOptions(), []);
   const [obras, setObras] = useState<Obra[]>([]);
   const [obraId, setObraId] = useState("");
-  const [quinzena, setQuinzena] = useState(quinzenaOptions[0]?.id ?? "");
+  const [{ from, to }, setRange] = useState(defaultRange);
   const [report, setReport] = useState<ReportResponse | null>(null);
   const [loading, setLoading] = useState(false);
 
@@ -68,11 +55,11 @@ export default function RelatorioQuinzenalPage() {
   }, []);
 
   useEffect(() => {
-    if (!obraId || !quinzena) return;
+    if (!obraId || !from || !to) return;
     let cancelled = false;
     async function load() {
       setLoading(true);
-      const data = await fetch(`/api/relatorios/quinzenal?obraId=${obraId}&quinzena=${quinzena}`).then((r) =>
+      const data = await fetch(`/api/relatorios/quinzenal?obraId=${obraId}&from=${from}&to=${to}`).then((r) =>
         r.json()
       );
       if (cancelled) return;
@@ -83,7 +70,7 @@ export default function RelatorioQuinzenalPage() {
     return () => {
       cancelled = true;
     };
-  }, [obraId, quinzena]);
+  }, [obraId, from, to]);
 
   function exportCsv() {
     if (!report) return;
@@ -92,8 +79,8 @@ export default function RelatorioQuinzenalPage() {
       "Função",
       "Presenças",
       "Faltas",
-      "Dias refeição $",
-      "Refeição a pagar",
+      "Dias vale",
+      "Vale a pagar",
       "Merenda",
       "Deslocamento",
       "Total geral",
@@ -114,7 +101,7 @@ export default function RelatorioQuinzenalPage() {
     const url = URL.createObjectURL(blob);
     const link = document.createElement("a");
     link.href = url;
-    link.download = `relatorio-quinzenal-${quinzena}.csv`;
+    link.download = `relatorio-${from}-a-${to}.csv`;
     link.click();
     URL.revokeObjectURL(url);
   }
@@ -124,7 +111,7 @@ export default function RelatorioQuinzenalPage() {
       <div className="flex items-baseline justify-between flex-wrap gap-3 mb-6">
         <div>
           <h1 className="text-xl font-extrabold text-ink">Relatório quinzenal</h1>
-          <p className="text-sm text-muted mt-1">Fechamento de pagamento por funcionário</p>
+          <p className="text-sm text-muted mt-1">Fechamento de pagamento por funcionário — escolha o período</p>
         </div>
         <button
           onClick={exportCsv}
@@ -135,7 +122,7 @@ export default function RelatorioQuinzenalPage() {
         </button>
       </div>
 
-      <div className="flex gap-2.5 mb-4 flex-wrap">
+      <div className="flex gap-2.5 mb-4 flex-wrap items-center">
         <select
           value={obraId}
           onChange={(e) => setObraId(e.target.value)}
@@ -147,17 +134,19 @@ export default function RelatorioQuinzenalPage() {
             </option>
           ))}
         </select>
-        <select
-          value={quinzena}
-          onChange={(e) => setQuinzena(e.target.value)}
-          className="border border-line rounded-md px-2.5 py-1.5 text-sm bg-panel"
-        >
-          {quinzenaOptions.map((q) => (
-            <option key={q.id} value={q.id}>
-              {q.label}
-            </option>
-          ))}
-        </select>
+        <input
+          type="date"
+          value={from}
+          onChange={(e) => setRange((r) => ({ ...r, from: e.target.value }))}
+          className="border border-line rounded-md px-2.5 py-1.5 text-sm font-mono"
+        />
+        <span className="text-sm text-muted">até</span>
+        <input
+          type="date"
+          value={to}
+          onChange={(e) => setRange((r) => ({ ...r, to: e.target.value }))}
+          className="border border-line rounded-md px-2.5 py-1.5 text-sm font-mono"
+        />
       </div>
 
       <div className="bg-panel border border-line rounded-lg overflow-hidden">
@@ -165,7 +154,7 @@ export default function RelatorioQuinzenalPage() {
           <table className="w-full text-sm border-collapse min-w-[860px]">
             <thead>
               <tr>
-                {["Funcionário", "Presenças", "Faltas", "Dias refeição $", "Refeição a pagar", "Merenda", "Deslocamento", "Total geral"].map(
+                {["Funcionário", "Presenças", "Faltas", "Dias vale", "Vale a pagar", "Merenda", "Deslocamento", "Total geral"].map(
                   (h, i) => (
                     <th
                       key={h}
@@ -190,7 +179,7 @@ export default function RelatorioQuinzenalPage() {
               {!loading && report && report.funcionarios.length === 0 && (
                 <tr>
                   <td colSpan={8} className="px-3.5 py-6 text-center text-muted text-sm">
-                    Nenhum lançamento nesta quinzena para esta obra.
+                    Nenhum lançamento neste período para esta obra.
                   </td>
                 </tr>
               )}

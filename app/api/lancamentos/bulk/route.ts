@@ -56,9 +56,10 @@ export async function POST(request: NextRequest) {
       const presenca = r.presenca;
       const tipoRefeicao = presenca ? r.tipoRefeicao ?? null : null;
       const custoRefeicao = tipoRefeicao === "DINHEIRO" ? valorRefeicao : 0;
-      const merendaRecebida = presenca ? !!r.merendaRecebida : false;
-      const custoMerenda = merendaRecebida ? valorMerenda : 0;
       const valorDeslocamento = presenca ? r.valorDeslocamento ?? 0 : 0;
+      // Quem recebe deslocamento já tem a merenda incluída.
+      const merendaRecebida = presenca ? !!r.merendaRecebida || valorDeslocamento > 0 : false;
+      const custoMerenda = merendaRecebida ? valorMerenda : 0;
 
       return prisma.registroDiario.upsert({
         where: { funcionarioId_data: { funcionarioId: r.funcionarioId, data } },

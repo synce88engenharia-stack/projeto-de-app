@@ -156,9 +156,9 @@ export default function HistoricoFuncionarioPage({ params }: { params: Promise<{
                     </td>
                     <td className="px-3.5 py-2.5 border-b border-[#e6edf5]">
                       {l.tipoRefeicao === "DINHEIRO"
-                        ? "Dinheiro"
+                        ? "Vale"
                         : l.tipoRefeicao === "EM_ESPECIE"
-                          ? "Em espécie"
+                          ? "Almoço"
                           : "—"}
                     </td>
                     <td className="px-3.5 py-2.5 border-b border-[#e6edf5]">{l.merendaRecebida ? "Sim" : "Não"}</td>

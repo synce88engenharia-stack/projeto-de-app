@@ -80,7 +80,7 @@ export default async function DashboardPage() {
         <div className="bg-panel border border-line rounded-lg px-4.5 py-4">
           <div className="text-[11px] uppercase tracking-wide text-muted font-bold">A pagar — quinzena atual</div>
           <div className="font-mono tabular-nums text-2xl font-semibold mt-2">{formatCurrency(totalAPagarQuinzena)}</div>
-          <div className="text-xs text-muted mt-1.5">Refeição em dinheiro + merenda + deslocamento</div>
+          <div className="text-xs text-muted mt-1.5">Vale + merenda + deslocamento</div>
         </div>
       </div>
 

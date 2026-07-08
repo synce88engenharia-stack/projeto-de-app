@@ -61,7 +61,7 @@ export default function LancamentoPage() {
           funcao: funcionario.funcao,
           presenca: registro ? registro.presenca : true,
           tipoRefeicao: registro ? registro.tipoRefeicao : null,
-          merendaRecebida: registro ? registro.merendaRecebida : false,
+          merendaRecebida: registro ? registro.merendaRecebida || registro.valorDeslocamento > 0 : false,
           valorDeslocamento: registro ? String(registro.valorDeslocamento) : "0",
         }))
       );
@@ -75,6 +75,17 @@ export default function LancamentoPage() {
 
   function updateLinha(funcionarioId: string, patch: Partial<Linha>) {
     setLinhas((prev) => prev.map((l) => (l.funcionarioId === funcionarioId ? { ...l, ...patch } : l)));
+  }
+
+  function updateDeslocamento(funcionarioId: string, valor: string) {
+    const numero = Number(valor.replace(",", ".")) || 0;
+    setLinhas((prev) =>
+      prev.map((l) =>
+        l.funcionarioId === funcionarioId
+          ? { ...l, valorDeslocamento: valor, merendaRecebida: numero > 0 ? true : l.merendaRecebida }
+          : l
+      )
+    );
   }
 
   async function handleSave() {
@@ -203,7 +214,7 @@ export default function LancamentoPage() {
                           l.tipoRefeicao === "EM_ESPECIE" ? "bg-ink text-white" : "text-muted"
                         }`}
                       >
-                        Em espécie
+                        Almoço
                       </button>
                       <button
                         type="button"
@@ -213,32 +224,39 @@ export default function LancamentoPage() {
                           l.tipoRefeicao === "DINHEIRO" ? "bg-ink text-white" : "text-muted"
                         }`}
                       >
-                        Dinheiro
+                        Vale
                       </button>
                     </div>
                   </td>
                   <td className="px-3.5 py-2.5 border-b border-[#e6edf5]">
-                    <button
-                      disabled={!l.presenca}
-                      onClick={() => updateLinha(l.funcionarioId, { merendaRecebida: !l.merendaRecebida })}
-                      className={`w-[34px] h-5 rounded-full relative transition-colors disabled:opacity-40 ${
-                        l.merendaRecebida ? "bg-success" : "bg-line"
-                      }`}
-                      aria-pressed={l.merendaRecebida}
-                      aria-label="Merenda recebida"
-                    >
-                      <span
-                        className={`absolute top-0.5 w-4 h-4 rounded-full bg-white shadow transition-all ${
-                          l.merendaRecebida ? "left-4" : "left-0.5"
-                        }`}
-                      />
-                    </button>
+                    {(() => {
+                      const numero = Number(l.valorDeslocamento.replace(",", ".")) || 0;
+                      const travada = l.presenca && numero > 0;
+                      return (
+                        <button
+                          disabled={!l.presenca || travada}
+                          title={travada ? "Incluída automaticamente pelo deslocamento" : undefined}
+                          onClick={() => updateLinha(l.funcionarioId, { merendaRecebida: !l.merendaRecebida })}
+                          className={`w-[34px] h-5 rounded-full relative transition-colors disabled:opacity-70 ${
+                            l.merendaRecebida ? "bg-success" : "bg-line"
+                          }`}
+                          aria-pressed={l.merendaRecebida}
+                          aria-label="Merenda recebida"
+                        >
+                          <span
+                            className={`absolute top-0.5 w-4 h-4 rounded-full bg-white shadow transition-all ${
+                              l.merendaRecebida ? "left-4" : "left-0.5"
+                            }`}
+                          />
+                        </button>
+                      );
+                    })()}
                   </td>
                   <td className="px-3.5 py-2.5 border-b border-[#e6edf5] text-right">
                     <input
                       disabled={!l.presenca}
                       value={l.valorDeslocamento}
-                      onChange={(e) => updateLinha(l.funcionarioId, { valorDeslocamento: e.target.value })}
+                      onChange={(e) => updateDeslocamento(l.funcionarioId, e.target.value)}
                       className="w-[90px] text-right font-mono tabular-nums border border-line rounded-md px-2 py-1 text-sm bg-[#f6f9fc] disabled:opacity-40"
                     />
                   </td>
@@ -249,7 +267,8 @@ export default function LancamentoPage() {
         </div>
       </div>
       <p className="text-xs text-muted px-1 mt-3">
-        Marcar falta desativa refeição, merenda e deslocamento automaticamente. Clique em &quot;Salvar lançamentos do
+        Marcar falta desativa refeição, merenda e deslocamento automaticamente. Preencher um valor de deslocamento
+        marca a merenda como recebida automaticamente, já que ela vem incluída. Clique em &quot;Salvar lançamentos do
         dia&quot; para gravar todas as linhas de uma vez.
       </p>
     </div>
