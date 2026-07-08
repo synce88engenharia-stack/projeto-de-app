@@ -8,6 +8,8 @@ export default function ConfiguracoesPage() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
+  const [corrigindo, setCorrigindo] = useState(false);
+  const [resultadoCorrecao, setResultadoCorrecao] = useState<string | null>(null);
 
   useEffect(() => {
     fetch("/api/config")
@@ -33,6 +35,23 @@ export default function ConfiguracoesPage() {
     });
     setSaving(false);
     setMessage(response.ok ? "Configurações salvas." : "Não foi possível salvar.");
+  }
+
+  async function handleCorrigirAlmoco() {
+    setCorrigindo(true);
+    setResultadoCorrecao(null);
+    const response = await fetch("/api/admin/corrigir-almoco", { method: "POST" });
+    setCorrigindo(false);
+    if (response.ok) {
+      const data: { corrigidos: number; valorAplicado: number } = await response.json();
+      setResultadoCorrecao(
+        data.corrigidos > 0
+          ? `${data.corrigidos} lançamento(s) de almoço corrigido(s) para R$ ${data.valorAplicado.toFixed(2)}.`
+          : "Nenhum lançamento pendente de correção — tudo já está certo."
+      );
+    } else {
+      setResultadoCorrecao("Não foi possível corrigir os lançamentos.");
+    }
   }
 
   return (
@@ -83,6 +102,23 @@ export default function ConfiguracoesPage() {
           </p>
         </form>
       )}
+
+      <div className="bg-panel border border-line rounded-lg p-6 mt-5">
+        <h3 className="text-sm font-bold text-ink mb-1">Correção pontual: almoço histórico</h3>
+        <p className="text-sm text-muted mb-3">
+          Lançamentos de &quot;Almoço&quot; salvos antes da mudança que passou a contar R$14 para a empresa (igual ao
+          Vale) ficaram com valor R$0. Clique abaixo para corrigir esses lançamentos antigos de uma vez. Seguro de
+          rodar mais de uma vez — só corrige o que ainda estiver em R$0.
+        </p>
+        <button
+          onClick={handleCorrigirAlmoco}
+          disabled={corrigindo}
+          className="border border-line rounded-md px-4 py-2 text-sm font-semibold hover:border-[#aac0da] disabled:opacity-60"
+        >
+          {corrigindo ? "Corrigindo…" : "Corrigir lançamentos antigos de almoço"}
+        </button>
+        {resultadoCorrecao && <p className="text-sm text-muted mt-2.5">{resultadoCorrecao}</p>}
+      </div>
     </div>
   );
 }
